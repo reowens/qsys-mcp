@@ -1,0 +1,251 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { QrcClient, type EngineStatus } from './qrc.js';
+
+let client: QrcClient | null = null;
+let lastEngineStatus: EngineStatus | null = null;
+
+function ok(data: unknown) {
+  const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  return { content: [{ type: 'text' as const, text }] };
+}
+
+function fail(message: string) {
+  return { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
+}
+
+function requireClient(): QrcClient {
+  if (!client || !client.isConnected()) {
+    throw new Error('Not connected to Q-SYS. Call qsys_connect first.');
+  }
+  return client;
+}
+
+/** Warn when a write targets a live Core rather than an emulator. */
+function liveCoreWarning(): string | null {
+  if (lastEngineStatus && lastEngineStatus.IsEmulator === false) {
+    return `⚠ Writing to a LIVE Q-SYS Core (design "${lastEngineStatus.DesignName}"), not an emulator — this changes real audio.`;
+  }
+  return null;
+}
+
+const controlValue = z.union([z.number(), z.string(), z.boolean()]);
+
+export function buildServer(): McpServer {
+  const server = new McpServer({ name: 'q-sys-mcp', version: '0.1.0' });
+
+  server.registerTool(
+    'qsys_connect',
+    {
+      title: 'Connect to Q-SYS',
+      description:
+        'Connect to a Q-SYS Core or to Q-SYS Designer running in Emulate mode (press F6 in Designer), over the QRC protocol (TCP). For a local emulator use host "127.0.0.1" and port 1710. Must be called before any other tool.',
+      inputSchema: {
+        host: z.string().default('127.0.0.1').describe('Core IP/hostname, or 127.0.0.1 for a local Designer emulator'),
+        port: z.number().int().default(1710).describe('QRC port (default 1710)'),
+        user: z.string().optional().describe('Username, if the design requires authentication'),
+        password: z.string().optional().describe('Password, if the design requires authentication'),
+      },
+    },
+    async ({ host, port, user, password }) => {
+      try {
+        if (client) client.close();
+        const c = new QrcClient({ host, port });
+        c.on('engineStatus', (s: EngineStatus) => {
+          lastEngineStatus = s;
+        });
+        c.on('error', () => {
+          /* surfaced per-request; avoid crashing the server on transient socket errors */
+        });
+        await c.connect();
+        if (user && password) await c.logon(user, password);
+        client = c;
+        const status = await c.statusGet();
+        lastEngineStatus = status;
+        return ok({ connected: true, host, port, status });
+      } catch (e) {
+        client = null;
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_status',
+    {
+      title: 'Q-SYS engine status',
+      description: 'Get the Q-SYS engine status: platform, design name, run state, emulator flag.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return ok(await requireClient().statusGet());
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_list_components',
+    {
+      title: 'List components',
+      description: 'List every named component in the running/emulated design, with type and properties (Component.GetComponents).',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return ok(await requireClient().getComponents());
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_get_component_controls',
+    {
+      title: 'Get component controls',
+      description: 'List all controls and their current values for a named component (Component.GetControls).',
+      inputSchema: { name: z.string().describe('Component name (as returned by qsys_list_components)') },
+    },
+    async ({ name }) => {
+      try {
+        return ok(await requireClient().getComponentControls(name));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_get_control',
+    {
+      title: 'Get control values',
+      description: 'Get the current values of one or more Named Controls (Control.Get).',
+      inputSchema: { names: z.array(z.string()).min(1).describe('Named Control names') },
+    },
+    async ({ names }) => {
+      try {
+        return ok(await requireClient().getControl(names));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_get_component',
+    {
+      title: 'Get specific component control values',
+      description: 'Get specific control values within a named component (Component.Get).',
+      inputSchema: {
+        name: z.string().describe('Component name'),
+        controls: z.array(z.string()).min(1).describe('Control names within the component'),
+      },
+    },
+    async ({ name, controls }) => {
+      try {
+        return ok(await requireClient().getComponent(name, controls));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_set_control',
+    {
+      title: 'Set a control value',
+      description:
+        'Set a Named Control value, optionally ramped over a number of seconds (Control.Set). This MUTATES the running/emulated system.',
+      inputSchema: {
+        name: z.string().describe('Named Control name'),
+        value: controlValue.describe('New value (number, string, or boolean)'),
+        ramp: z.number().optional().describe('Ramp time in seconds (optional)'),
+      },
+    },
+    async ({ name, value, ramp }) => {
+      try {
+        const result = await requireClient().setControl(name, value, ramp);
+        const warning = liveCoreWarning();
+        return ok(warning ? { warning, result } : result);
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_set_component',
+    {
+      title: 'Set component control values',
+      description:
+        'Set one or more control values within a named component, each optionally ramped (Component.Set). This MUTATES the running/emulated system.',
+      inputSchema: {
+        name: z.string().describe('Component name'),
+        controls: z
+          .array(
+            z.object({
+              name: z.string(),
+              value: controlValue,
+              ramp: z.number().optional(),
+            }),
+          )
+          .min(1),
+      },
+    },
+    async ({ name, controls }) => {
+      try {
+        const mapped = controls.map((c) => ({
+          Name: c.name,
+          Value: c.value,
+          ...(c.ramp != null ? { Ramp: c.ramp } : {}),
+        }));
+        const result = await requireClient().setComponent(name, mapped);
+        const warning = liveCoreWarning();
+        return ok(warning ? { warning, result } : result);
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_create_change_group',
+    {
+      title: 'Create or extend a change group',
+      description:
+        'Create a change group (or add Named Controls to an existing one) so you can poll for changes (ChangeGroup.AddControl).',
+      inputSchema: {
+        id: z.string().describe('Change group id (any string; reused on poll)'),
+        controls: z.array(z.string()).min(1).describe('Named Control names to watch'),
+      },
+    },
+    async ({ id, controls }) => {
+      try {
+        return ok(await requireClient().changeGroupAddControl(id, controls));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_poll_change_group',
+    {
+      title: 'Poll a change group',
+      description: 'Poll a change group; returns the controls that changed since the last poll (ChangeGroup.Poll).',
+      inputSchema: { id: z.string().describe('Change group id') },
+    },
+    async ({ id }) => {
+      try {
+        return ok(await requireClient().changeGroupPoll(id));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  return server;
+}
