@@ -71,10 +71,15 @@ Then, from the agent: call `qsys_connect` (host `127.0.0.1`, port `1710` for a l
 ## Verify
 
 ```bash
-npm test                             # offline: QRC integration + MCP-over-mock (no hardware)
-npm run smoke -- 127.0.0.1 1710      # read-only smoke against a live emulator/Core
-npm run smoke:mcp -- 127.0.0.1 1710  # full MCP-over-stdio smoke against a live target
+npm test                               # offline: QRC integration + MCP-over-mock (no hardware)
+npm run smoke -- 127.0.0.1 1710        # read-only smoke against a live emulator/Core
+npm run smoke:mcp -- 127.0.0.1 1710    # full MCP-over-stdio smoke against a live target
+npm run smoke:write -- 127.0.0.1 1710  # live WRITE round-trip: set a gain, verify, restore
+npm run smoke:named -- MainGain        # live Named-Control read/set + change-group poll (pass your Named Control name)
+npm run smoke:keepalive                # idle >60s, prove the socket survives QRC's idle close
 ```
+
+`npm test` needs no hardware; every `smoke:*` script needs a live target (a real Core, or Designer in Emulate mode, on port 1710).
 
 ## CI
 
