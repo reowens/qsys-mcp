@@ -1,7 +1,7 @@
 {
   "name": "q-sys-mcp",
   "version": "0.1.1",
-  "description": "MCP server for controlling Q-SYS over the QRC protocol — a real Core or Q-SYS Designer in Emulate mode.",
+  "description": "Control a Q-SYS audio/video system from an AI agent over QSC's QRC protocol — against a real Core or Q-SYS Designer in Emulate mode. Open-source, cross-platform, zero QSC code.",
   "type": "module",
   "bin": {
     "q-sys-mcp": "dist/index.js"
@@ -30,7 +30,12 @@
     "model-context-protocol",
     "qrc",
     "av",
-    "dsp"
+    "audiovisual",
+    "audio",
+    "dsp",
+    "ai-agent",
+    "claude-code",
+    "typescript"
   ],
   "license": "MIT",
   "repository": {

@@ -6,6 +6,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Richer package description + expanded npm keywords, and added GitHub repo
+  description + topics, for search and discoverability.
+
 ## [0.1.1] - 2026-06-22
 
 ### Changed
