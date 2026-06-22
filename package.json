@@ -1,6 +1,6 @@
 {
   "name": "q-sys-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for controlling Q-SYS over the QRC protocol — a real Core or Q-SYS Designer in Emulate mode.",
   "type": "module",
   "bin": {
@@ -22,7 +22,16 @@
     "smoke:named": "tsx test/live-named.ts",
     "smoke:keepalive": "tsx test/keepalive.ts"
   },
-  "keywords": ["q-sys", "qsys", "qsc", "mcp", "model-context-protocol", "qrc", "av", "dsp"],
+  "keywords": [
+    "q-sys",
+    "qsys",
+    "qsc",
+    "mcp",
+    "model-context-protocol",
+    "qrc",
+    "av",
+    "dsp"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -35,7 +44,11 @@
   "engines": {
     "node": ">=18"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0",
     "zod": "^3.23.8"
