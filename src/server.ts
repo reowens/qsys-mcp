@@ -262,6 +262,49 @@ export function buildServer(): McpServer {
   );
 
   server.registerTool(
+    'qsys_load_snapshot',
+    {
+      title: 'Recall a snapshot',
+      description:
+        'Recall control settings from a saved snapshot bank/number, optionally ramped over seconds (Snapshot.Load). This MUTATES the running/emulated system.',
+      inputSchema: {
+        bank: z.string().describe('Snapshot bank name, as named in Q-SYS Designer'),
+        number: z.number().int().min(1).describe('Snapshot number within the bank (1-based)'),
+        ramp: z.number().optional().describe('Ramp time in seconds (optional)'),
+      },
+    },
+    async ({ bank, number, ramp }) => {
+      try {
+        const result = await requireClient().snapshotLoad(bank, number, ramp);
+        const warning = liveCoreWarning();
+        return ok(warning ? { warning, result } : result);
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_save_snapshot',
+    {
+      title: 'Save a snapshot',
+      description:
+        'Capture the current control settings into a snapshot bank/number (Snapshot.Save). This OVERWRITES the stored snapshot.',
+      inputSchema: {
+        bank: z.string().describe('Snapshot bank name, as named in Q-SYS Designer'),
+        number: z.number().int().min(1).describe('Snapshot number within the bank (1-based)'),
+      },
+    },
+    async ({ bank, number }) => {
+      try {
+        return ok(await requireClient().snapshotSave(bank, number));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
     'qsys_create_change_group',
     {
       title: 'Create or extend a change group',
@@ -334,7 +377,60 @@ export function buildServer(): McpServer {
     },
   );
 
-  // ChangeGroup.AutoPoll is intentionally omitted in v1: MCP stdio is request/response,
+  server.registerTool(
+    'qsys_change_group_remove',
+    {
+      title: 'Remove controls from a change group',
+      description:
+        'Remove Named Controls from a change group, leaving the group in place (ChangeGroup.Remove). Returns any unknown control names.',
+      inputSchema: {
+        id: z.string().describe('Change group id'),
+        controls: z.array(z.string()).min(1).describe('Named Control names to stop watching'),
+      },
+    },
+    async ({ id, controls }) => {
+      try {
+        return ok(await requireClient().changeGroupRemove(id, controls));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_change_group_clear',
+    {
+      title: 'Clear a change group',
+      description: 'Remove all controls from a change group without destroying it (ChangeGroup.Clear).',
+      inputSchema: { id: z.string().describe('Change group id') },
+    },
+    async ({ id }) => {
+      try {
+        return ok(await requireClient().changeGroupClear(id));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'qsys_change_group_invalidate',
+    {
+      title: 'Invalidate a change group',
+      description:
+        'Invalidate a change group so the next poll resends every watched control, not just the changes (ChangeGroup.Invalidate). Handy after a reconnect to force a full snapshot.',
+      inputSchema: { id: z.string().describe('Change group id') },
+    },
+    async ({ id }) => {
+      try {
+        return ok(await requireClient().changeGroupInvalidate(id));
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // ChangeGroup.AutoPoll is intentionally omitted: MCP stdio is request/response,
   // so a Core-pushed poll has nowhere to land; manual qsys_poll_change_group covers it.
   server.registerTool(
     'qsys_disconnect',

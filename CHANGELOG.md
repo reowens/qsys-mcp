@@ -14,6 +14,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   without re-calling `qsys_connect`. In-flight and subsequent requests wait for
   the reconnect and retry once — drops are transparent to callers. On by
   default; opt out per connection with `reconnect: false` on `qsys_connect`.
+- Snapshot tools: `qsys_load_snapshot` (`Snapshot.Load`, optional ramp) and
+  `qsys_save_snapshot` (`Snapshot.Save`) for recalling and capturing control
+  scenes by bank name + snapshot number.
+- Change-group lifecycle is now complete: `qsys_change_group_remove`
+  (`ChangeGroup.Remove`), `qsys_change_group_clear` (`ChangeGroup.Clear`), and
+  `qsys_change_group_invalidate` (`ChangeGroup.Invalidate`, force a full resend
+  on the next poll — handy after a reconnect). 13 tools → 18.
 
 ### Changed
 

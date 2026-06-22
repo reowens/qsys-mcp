@@ -171,10 +171,36 @@ function handle(msg: any, send: (o: unknown) => void, st: State): void {
       }
       return reply(null);
     }
+    case 'ChangeGroup.Remove': {
+      const g = st.changeGroups[msg.params.Id];
+      if (!g) return error(-32602, `Unknown change group: ${msg.params.Id}`);
+      for (const c of msg.params.Controls ?? []) {
+        g.controls.delete(c);
+        delete g.lastSent[c];
+      }
+      return reply(null);
+    }
+    case 'ChangeGroup.Clear': {
+      const g = st.changeGroups[msg.params.Id];
+      if (!g) return error(-32602, `Unknown change group: ${msg.params.Id}`);
+      g.controls.clear();
+      g.componentControls = [];
+      g.lastSent = {};
+      return reply(null);
+    }
+    case 'ChangeGroup.Invalidate': {
+      const g = st.changeGroups[msg.params.Id];
+      if (!g) return error(-32602, `Unknown change group: ${msg.params.Id}`);
+      g.lastSent = {}; // force the next poll to resend everything
+      return reply(null);
+    }
     case 'ChangeGroup.Destroy': {
       delete st.changeGroups[msg.params.Id];
       return reply(null);
     }
+    case 'Snapshot.Load':
+    case 'Snapshot.Save':
+      return reply(null);
     case 'ChangeGroup.Poll': {
       const id = msg.params.Id;
       const g = st.changeGroups[id];

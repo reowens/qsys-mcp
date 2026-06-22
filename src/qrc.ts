@@ -391,10 +391,45 @@ export class QrcClient extends EventEmitter {
     return this.send('ChangeGroup.Poll', { Id: id }) as Promise<{ Id: string; Changes: QrcControl[] }>;
   }
 
+  async changeGroupRemove(id: string, controls: string[]): Promise<unknown> {
+    const result = await this.send('ChangeGroup.Remove', { Id: id, Controls: controls });
+    const g = this.changeGroups.get(id);
+    if (g) for (const c of controls) g.controls.delete(c); // drop from replay state too
+    return result;
+  }
+
+  async changeGroupClear(id: string): Promise<unknown> {
+    const result = await this.send('ChangeGroup.Clear', { Id: id });
+    const g = this.changeGroups.get(id);
+    if (g) {
+      g.controls.clear();
+      g.components.clear();
+    }
+    return result;
+  }
+
+  changeGroupInvalidate(id: string): Promise<unknown> {
+    return this.send('ChangeGroup.Invalidate', { Id: id });
+  }
+
   async changeGroupDestroy(id: string): Promise<unknown> {
     const result = await this.send('ChangeGroup.Destroy', { Id: id });
     this.changeGroups.delete(id); // stop replaying a group the caller tore down
     return result;
+  }
+
+  /**
+   * Recall a saved snapshot. Note: QRC's `Bank` param is the snapshot *number*
+   * within a named bank — `bank` here is the bank name, `number` the slot.
+   */
+  snapshotLoad(bank: string, number: number, ramp?: number): Promise<unknown> {
+    const params: Record<string, unknown> = { Name: bank, Bank: number };
+    if (ramp != null) params.Ramp = ramp;
+    return this.send('Snapshot.Load', params);
+  }
+
+  snapshotSave(bank: string, number: number): Promise<unknown> {
+    return this.send('Snapshot.Save', { Name: bank, Bank: number });
   }
 
   private groupState(id: string): ChangeGroupState {

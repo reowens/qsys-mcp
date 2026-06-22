@@ -60,6 +60,33 @@ async function main(): Promise<void> {
   assert.equal(cpoll2.Changes.length, 1, 'second poll should report exactly one component-control change');
   assert.equal(cpoll2.Changes[0].Value, 7);
 
+  // Invalidate forces a full resend on the next poll (ChangeGroup.Invalidate)
+  assert.equal((await client.changeGroupPoll('cg1')).Changes.length, 0, 'no changes since last poll');
+  await client.changeGroupInvalidate('cg1');
+  assert.ok(
+    (await client.changeGroupPoll('cg1')).Changes.find((c) => c.Name === 'MainGain'),
+    'invalidate resends MainGain on the next poll',
+  );
+
+  // Remove drops a single control, leaving the group in place (ChangeGroup.Remove)
+  await client.changeGroupAddControl('cg1', ['MainMute']);
+  await client.changeGroupPoll('cg1'); // baseline both
+  await client.setControl('MainGain', 11);
+  await client.setControl('MainMute', 1);
+  await client.changeGroupRemove('cg1', ['MainGain']);
+  const afterRemove = await client.changeGroupPoll('cg1');
+  assert.ok(afterRemove.Changes.find((c) => c.Name === 'MainMute'), 'MainMute still watched after remove');
+  assert.ok(!afterRemove.Changes.find((c) => c.Name === 'MainGain'), 'MainGain no longer watched after remove');
+
+  // Clear empties the group but keeps it pollable (ChangeGroup.Clear)
+  await client.changeGroupClear('cg1');
+  assert.equal((await client.changeGroupPoll('cg1')).Changes.length, 0, 'cleared group reports nothing');
+
+  // Snapshots round-trip (Snapshot.Save / Snapshot.Load, ramped and not)
+  await client.snapshotSave('MyBank', 1);
+  await client.snapshotLoad('MyBank', 1);
+  await client.snapshotLoad('MyBank', 1, 2.5);
+
   // Destroy frees the group (ChangeGroup.Destroy)
   await client.changeGroupDestroy('cg2');
   await assert.rejects(() => client.changeGroupPoll('cg2'), /Unknown change group/);
@@ -69,7 +96,7 @@ async function main(): Promise<void> {
 
   client.close();
   await mock.close();
-  console.log('PASS: all QRC integration assertions (19 checks)');
+  console.log('PASS: all QRC integration assertions (24 checks, incl. snapshots + change-group remove/clear/invalidate)');
 }
 
 main().catch((e) => {

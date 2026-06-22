@@ -13,7 +13,7 @@ It's a pure wire-protocol client: **zero QSC code**, no SDK, no hardware require
 
 ## Highlights
 
-- **13 tools** covering connect, status, discovery, read, write (with ramps), change-group polling, and disconnect.
+- **18 tools** covering connect, status, discovery, read, write (with ramps), snapshots, the full change-group lifecycle (add/poll/remove/clear/invalidate/destroy), and disconnect.
 - **No hardware needed** — develop entirely against Designer's Emulate-mode soft-core on `localhost`.
 - **Cross-platform** — `node:net` only; CI proves it on Linux, macOS, and Windows × Node 18 & 20.
 - **Context-friendly** — list/get tools take `filter` / `names_only` / `type` so large designs don't flood the agent's context.
@@ -93,9 +93,14 @@ qsys_poll_change_group    → { id: "meters" }   // returns only what changed si
 | `qsys_get_component` | `Component.Get` | Get specific component control values |
 | `qsys_set_control` | `Control.Set` | Set a Named Control (with optional ramp) |
 | `qsys_set_component` | `Component.Set` | Set component controls (with optional ramps) |
+| `qsys_load_snapshot` | `Snapshot.Load` | Recall a saved snapshot (with optional ramp) |
+| `qsys_save_snapshot` | `Snapshot.Save` | Capture current settings into a snapshot |
 | `qsys_create_change_group` | `ChangeGroup.AddControl` | Watch Named Controls for changes |
 | `qsys_change_group_add_component` | `ChangeGroup.AddComponentControl` | Watch a component's controls |
 | `qsys_poll_change_group` | `ChangeGroup.Poll` | Get changes since last poll |
+| `qsys_change_group_remove` | `ChangeGroup.Remove` | Stop watching specific Named Controls |
+| `qsys_change_group_clear` | `ChangeGroup.Clear` | Remove all controls, keep the group |
+| `qsys_change_group_invalidate` | `ChangeGroup.Invalidate` | Force the next poll to resend everything |
 | `qsys_destroy_change_group` | `ChangeGroup.Destroy` | Free a change group's server-side state |
 | `qsys_disconnect` | (socket) | Close the connection |
 
