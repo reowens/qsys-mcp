@@ -17,7 +17,9 @@
     "test:mcp": "tsx test/mcp-mock.ts",
     "smoke": "tsx test/live-smoke.ts",
     "smoke:write": "tsx test/live-write.ts",
-    "smoke:mcp": "tsx test/mcp-smoke.ts"
+    "smoke:mcp": "tsx test/mcp-smoke.ts",
+    "smoke:named": "tsx test/live-named.ts",
+    "smoke:keepalive": "tsx test/keepalive.ts"
   },
   "keywords": ["q-sys", "qsys", "qsc", "mcp", "model-context-protocol", "qrc", "av", "dsp"],
   "license": "MIT",
