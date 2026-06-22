@@ -1,5 +1,7 @@
 # q-sys-mcp
 
+[![CI](https://github.com/reowens/q-sys-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/reowens/q-sys-mcp/actions/workflows/ci.yml)
+
 An [MCP](https://modelcontextprotocol.io) server that lets an AI agent inspect and control a **Q-SYS** system over QSC's published **QRC** external-control protocol — pointed at a real Core *or* at Q-SYS Designer running in **Emulate mode**.
 
 It's a wire-protocol client (like any Crestron/AMX integration), so it works on macOS, Windows, and Linux, and contains **zero QSC code**. This is an AI-native control layer QSC ships on no platform.
@@ -69,9 +71,14 @@ Then, from the agent: call `qsys_connect` (host `127.0.0.1`, port `1710` for a l
 ## Verify
 
 ```bash
-npm test                       # integration test against an in-memory mock QRC server
-npm run smoke -- 127.0.0.1 1710  # read-only smoke against a live emulator/Core
+npm test                             # offline: QRC integration + MCP-over-mock (no hardware)
+npm run smoke -- 127.0.0.1 1710      # read-only smoke against a live emulator/Core
+npm run smoke:mcp -- 127.0.0.1 1710  # full MCP-over-stdio smoke against a live target
 ```
+
+## CI
+
+Linux, macOS, and Windows × Node 18 & 20 via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `npm ci && npm run build && npm run typecheck && npm test` on every push and PR. The whole suite is hardware-free (mock QRC server + in-memory MCP transport), so the full matrix runs without a Core.
 
 ## Roadmap / out of scope
 
