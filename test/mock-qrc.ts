@@ -12,6 +12,13 @@ export interface MockHandle {
   dropConnections: () => void;
   /** Clear server-side change groups (simulates a Core restart losing them). */
   resetState: () => void;
+  /** Silently ignore the next request for this method (simulates a slow/hung Core → client timeout). */
+  swallowNext: (method: string) => void;
+  /** How many Logon requests this server has answered (incl. reconnect replays). */
+  logonCount: () => number;
+  /** The params of the most recent Snapshot.Load / Snapshot.Save (for wire-shape assertions). */
+  lastSnapshotLoad: () => unknown;
+  lastSnapshotSave: () => unknown;
 }
 
 interface State {
@@ -25,13 +32,19 @@ interface State {
       lastSent: Record<string, number>;
     }
   >;
+  isEmulator: boolean;
+  swallow: Set<string>;
+  stats: { logon: number; snapshotLoad: unknown; snapshotSave: unknown };
 }
 
-export function startMockQrc(port = 0): Promise<MockHandle> {
+export function startMockQrc(port = 0, opts: { isEmulator?: boolean } = {}): Promise<MockHandle> {
   const state: State = {
     controls: { MainGain: -10, MainMute: 0 },
     componentControls: { Gain1: { gain: -6, mute: 0 } },
     changeGroups: {},
+    isEmulator: opts.isEmulator ?? true,
+    swallow: new Set(),
+    stats: { logon: 0, snapshotLoad: null, snapshotSave: null },
   };
 
   const sockets = new Set<net.Socket>();
@@ -53,7 +66,7 @@ export function startMockQrc(port = 0): Promise<MockHandle> {
         DesignName: 'MockDesign',
         DesignCode: 'mock',
         IsRedundant: false,
-        IsEmulator: true,
+        IsEmulator: state.isEmulator,
         Status: { Code: 0, String: 'OK' },
       },
     });
@@ -89,6 +102,10 @@ export function startMockQrc(port = 0): Promise<MockHandle> {
         resetState: () => {
           state.changeGroups = {};
         },
+        swallowNext: (method: string) => state.swallow.add(method),
+        logonCount: () => state.stats.logon,
+        lastSnapshotLoad: () => state.stats.snapshotLoad,
+        lastSnapshotSave: () => state.stats.snapshotSave,
       });
     });
   });
@@ -102,10 +119,17 @@ function handle(msg: any, send: (o: unknown) => void, st: State): void {
     if (msg.id !== undefined) send({ jsonrpc: '2.0', error: { code, message }, id: msg.id });
   };
 
+  // Simulate a slow/hung Core: drop this request with no reply so the client times out.
+  if (st.swallow.has(msg.method)) {
+    st.swallow.delete(msg.method);
+    return;
+  }
+
   switch (msg.method) {
     case 'NoOp':
       return;
     case 'Logon':
+      st.stats.logon++;
       return reply({});
     case 'StatusGet':
       return reply({
@@ -114,7 +138,7 @@ function handle(msg: any, send: (o: unknown) => void, st: State): void {
         DesignName: 'MockDesign',
         DesignCode: 'mock',
         IsRedundant: false,
-        IsEmulator: true,
+        IsEmulator: st.isEmulator,
         Status: { Code: 0, String: 'OK' },
       });
     case 'Component.GetComponents':
@@ -199,7 +223,10 @@ function handle(msg: any, send: (o: unknown) => void, st: State): void {
       return reply(null);
     }
     case 'Snapshot.Load':
+      st.stats.snapshotLoad = msg.params;
+      return reply(null);
     case 'Snapshot.Save':
+      st.stats.snapshotSave = msg.params;
       return reply(null);
     case 'ChangeGroup.Poll': {
       const id = msg.params.Id;

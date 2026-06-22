@@ -99,15 +99,24 @@ async function main(): Promise<void> {
   const afterDestroy: any = await client.callTool({ name: 'qsys_poll_change_group', arguments: { id: 'g' } });
   assert.ok(afterDestroy?.isError, 'polling a destroyed group errors');
 
-  // Disconnect
+  // Live-Core write warning: reconnect to a non-emulator mock and confirm writes warn.
+  const liveMock = await startMockQrc(0, { isEmulator: false });
+  await call('qsys_connect', { host: '127.0.0.1', port: liveMock.port });
+  const setWarned = json(await call('qsys_set_control', { name: 'MainGain', value: -5 }));
+  assert.ok(/LIVE/.test(setWarned.warning ?? ''), 'set_control on a live Core returns a warning');
+  const loadWarned = json(await call('qsys_load_snapshot', { bank: 'B', number: 1 }));
+  assert.ok(/LIVE/.test(loadWarned.warning ?? ''), 'load_snapshot on a live Core returns a warning');
+
+  // Disconnect (from the live mock — clean, no reconnect storm)
   const disc = json(await call('qsys_disconnect'));
   assert.equal(disc.disconnected, true, 'disconnect reports success');
   const afterDisconnect: any = await client.callTool({ name: 'qsys_status', arguments: {} });
   assert.ok(afterDisconnect?.isError, 'tools error after disconnect (not connected)');
 
   await client.close();
+  await liveMock.close();
   await mock.close();
-  console.log(`PASS: MCP-over-mock (${EXPECTED_TOOLS.length} tools, shaping + snapshots + full change-group lifecycle + disconnect)`);
+  console.log(`PASS: MCP-over-mock (${EXPECTED_TOOLS.length} tools, shaping + snapshots + change-group lifecycle + live-Core warning + disconnect)`);
 }
 
 main().catch((e) => {

@@ -82,10 +82,14 @@ async function main(): Promise<void> {
   await client.changeGroupClear('cg1');
   assert.equal((await client.changeGroupPoll('cg1')).Changes.length, 0, 'cleared group reports nothing');
 
-  // Snapshots round-trip (Snapshot.Save / Snapshot.Load, ramped and not)
-  await client.snapshotSave('MyBank', 1);
-  await client.snapshotLoad('MyBank', 1);
-  await client.snapshotLoad('MyBank', 1, 2.5);
+  // Snapshots: assert the wire shape — the tool's whole job is mapping bank->Name,
+  // number->Bank (QRC's confusingly-named param), plus optional Ramp.
+  await client.snapshotSave('MyBank', 3);
+  assert.deepEqual(mock.lastSnapshotSave(), { Name: 'MyBank', Bank: 3 }, 'save maps bank->Name, number->Bank');
+  await client.snapshotLoad('OtherBank', 5, 2.5);
+  assert.deepEqual(mock.lastSnapshotLoad(), { Name: 'OtherBank', Bank: 5, Ramp: 2.5 }, 'load maps params incl. ramp');
+  await client.snapshotLoad('OtherBank', 2);
+  assert.deepEqual(mock.lastSnapshotLoad(), { Name: 'OtherBank', Bank: 2 }, 'load omits Ramp when not given');
 
   // Destroy frees the group (ChangeGroup.Destroy)
   await client.changeGroupDestroy('cg2');
@@ -96,7 +100,7 @@ async function main(): Promise<void> {
 
   client.close();
   await mock.close();
-  console.log('PASS: all QRC integration assertions (24 checks, incl. snapshots + change-group remove/clear/invalidate)');
+  console.log('PASS: all QRC integration assertions (snapshot param mapping + full change-group lifecycle)');
 }
 
 main().catch((e) => {
