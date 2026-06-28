@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   const server = buildServer();
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
-  const client = new Client({ name: 'q-sys-mcp-mocktest', version: '0.0.0' });
+  const client = new Client({ name: 'qsys-mcp-mocktest', version: '0.0.0' });
   await client.connect(clientTransport);
 
   const text = (r: any): string => (r?.content?.[0]?.text ?? '').toString();

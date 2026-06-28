@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const port = Number(process.argv[4] ?? 1710);
 
   const transport = new StdioClientTransport({ command: 'node', args: ['dist/index.js'] });
-  const client = new Client({ name: 'q-sys-mcp-named', version: '0.0.0' });
+  const client = new Client({ name: 'qsys-mcp-named', version: '0.0.0' });
   await client.connect(transport);
 
   const call = async (tool: string, args: Record<string, unknown> = {}) => {

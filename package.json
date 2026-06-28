@@ -1,10 +1,10 @@
 {
-  "name": "q-sys-mcp",
+  "name": "qsys-mcp",
   "version": "0.1.1",
   "description": "Control a Q-SYS audio/video system from an AI agent over QSC's QRC protocol — against a real Core or Q-SYS Designer in Emulate mode. Open-source, cross-platform, zero QSC code.",
   "type": "module",
   "bin": {
-    "q-sys-mcp": "dist/index.js"
+    "qsys-mcp": "dist/index.js"
   },
   "main": "dist/index.js",
   "scripts": {
@@ -41,12 +41,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reowens/q-sys-mcp.git"
+    "url": "git+https://github.com/reowens/qsys-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/reowens/q-sys-mcp/issues"
+    "url": "https://github.com/reowens/qsys-mcp/issues"
   },
-  "homepage": "https://github.com/reowens/q-sys-mcp#readme",
+  "homepage": "https://github.com/reowens/qsys-mcp#readme",
   "engines": {
     "node": ">=18"
   },

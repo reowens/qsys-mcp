@@ -1,13 +1,13 @@
-# q-sys-mcp
+# qsys-mcp
 
 > Let an AI agent inspect and control a **Q-SYS** audio/video system over QSC's published **QRC** protocol — against a real Core or Q-SYS Designer's built-in emulator.
 
-[![CI](https://github.com/reowens/q-sys-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/reowens/q-sys-mcp/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/q-sys-mcp.svg)](https://www.npmjs.com/package/q-sys-mcp)
+[![CI](https://github.com/reowens/qsys-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/reowens/qsys-mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/qsys-mcp.svg)](https://www.npmjs.com/package/qsys-mcp)
 [![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen.svg)](https://nodejs.org)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-`q-sys-mcp` is an [MCP](https://modelcontextprotocol.io) server. It speaks QSC's **QRC** external-control protocol (JSON-RPC 2.0 over TCP) — the same interface third-party control systems like Crestron and AMX use — and exposes it to an LLM agent as a set of tools. Point it at a physical Q-SYS Core *or* at Q-SYS Designer running in **Emulate mode** and the agent can read meters, flip mutes, ramp gains, and watch controls for changes.
+`qsys-mcp` is an [MCP](https://modelcontextprotocol.io) server. It speaks QSC's **QRC** external-control protocol (JSON-RPC 2.0 over TCP) — the same interface third-party control systems like Crestron and AMX use — and exposes it to an LLM agent as a set of tools. Point it at a physical Q-SYS Core *or* at Q-SYS Designer running in **Emulate mode** and the agent can read meters, flip mutes, ramp gains, and watch controls for changes.
 
 It's a pure wire-protocol client: **zero QSC code**, no SDK, no hardware required for development. That makes it a clean, sanctioned layer QSC ships on no platform — AI-native control — and it runs anywhere Node does.
 
@@ -25,14 +25,14 @@ It's a pure wire-protocol client: **zero QSC code**, no SDK, no hardware require
 Run it straight from npm (no install):
 
 ```bash
-npx -y q-sys-mcp        # MCP server on stdio
+npx -y qsys-mcp        # MCP server on stdio
 ```
 
 Or from source:
 
 ```bash
-git clone https://github.com/reowens/q-sys-mcp.git
-cd q-sys-mcp
+git clone https://github.com/reowens/qsys-mcp.git
+cd qsys-mcp
 npm install             # builds dist/ via the prepare hook
 node dist/index.js
 ```
@@ -46,13 +46,13 @@ Add it to your MCP client config (Claude Desktop, etc.):
   "mcpServers": {
     "q-sys": {
       "command": "npx",
-      "args": ["-y", "q-sys-mcp"]
+      "args": ["-y", "qsys-mcp"]
     }
   }
 }
 ```
 
-From a local checkout instead, use `"command": "node"` with `"args": ["/absolute/path/to/q-sys-mcp/dist/index.js"]`.
+From a local checkout instead, use `"command": "node"` with `"args": ["/absolute/path/to/qsys-mcp/dist/index.js"]`.
 
 Always call `qsys_connect` first (host `127.0.0.1`, port `1710` for a local emulator) before any other tool.
 
@@ -149,7 +149,7 @@ npm run smoke:keepalive                # idle >60s, prove the socket survives QR
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for release notes, or the [GitHub releases](https://github.com/reowens/q-sys-mcp/releases) page.
+See [CHANGELOG.md](CHANGELOG.md) for release notes, or the [GitHub releases](https://github.com/reowens/qsys-mcp/releases) page.
 
 ## License
 

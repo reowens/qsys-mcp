@@ -65,7 +65,7 @@ function shapeControls(
 }
 
 export function buildServer(): McpServer {
-  const server = new McpServer({ name: 'q-sys-mcp', version: '0.1.0' });
+  const server = new McpServer({ name: 'qsys-mcp', version: '0.1.0' });
 
   server.registerTool(
     'qsys_connect',

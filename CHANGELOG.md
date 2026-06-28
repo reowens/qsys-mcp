@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to q-sys-mcp are documented here.
+All notable changes to qsys-mcp (formerly `q-sys-mcp`) are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -51,6 +51,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Cross-platform CI (Linux / macOS / Windows × Node 18 & 20) with a
   hardware-free test suite (mock QRC + in-memory MCP transport).
 
-[Unreleased]: https://github.com/reowens/q-sys-mcp/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/reowens/q-sys-mcp/releases/tag/v0.1.1
+[Unreleased]: https://github.com/reowens/qsys-mcp/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/reowens/qsys-mcp/releases/tag/v0.1.1
 [0.1.0]: https://www.npmjs.com/package/q-sys-mcp/v/0.1.0

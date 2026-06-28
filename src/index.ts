@@ -7,7 +7,7 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // stdout is the MCP channel; logs go to stderr.
-  console.error('q-sys-mcp running on stdio');
+  console.error('qsys-mcp running on stdio');
 }
 
 main().catch((err) => {

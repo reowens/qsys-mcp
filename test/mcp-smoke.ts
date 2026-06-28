@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const port = Number(process.argv[3] ?? 1710);
 
   const transport = new StdioClientTransport({ command: 'node', args: ['dist/index.js'] });
-  const client = new Client({ name: 'q-sys-mcp-smoke', version: '0.0.0' });
+  const client = new Client({ name: 'qsys-mcp-smoke', version: '0.0.0' });
   await client.connect(transport);
 
   const tools = await client.listTools();
